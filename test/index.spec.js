@@ -50,6 +50,8 @@ describe('Simple counter reducer wrapped in undoable works', () => {
 describe('Changesets', () => {
   const A = Immutable.Map({})
   const B = Immutable.Map({a: 'Hello'})
+  const C = Immutable.Map({a: 'Hello', b: 'World!'})
+  const D = Immutable.Map({a: 'Hello', b: 'Redux!'})
 
   it('Can create and apply changeset', () => {
     const changeset = createChangeset(A, B)
@@ -61,10 +63,6 @@ describe('Changesets', () => {
   })
 
   it('Can determine which changeset came before', () => {
-    const A = Immutable.Map({})
-    const B = Immutable.Map({a: 'Hello'})
-    const C = Immutable.Map({a: 'Hello', b: 'World!'})
-    const D = Immutable.Map({a: 'Hello', b: 'Redux!'})
 
     // Initial Changesets
     const changeset_1 = createChangeset(A, B)
@@ -88,4 +86,14 @@ describe('Changesets', () => {
     expect(changesetIsWithin(changeset_1, changeset_3, timeDelta3)).to.equal(false)
     expect(changesetIsWithin(changeset_2, changeset_3, timeDelta3)).to.equal(false)
   })
+})
+
+describe('utils/date.js', () => {
+  const A = 5
+  const B = 7
+
+  expect(isWithin(A, B, 1)).to.equal(false)
+  expect(isWithin(A, B, 2)).to.equal(true)
+  expect(isWithin(B, A, 2)).to.equal(false)
+  expect(isWithin(B, A, -2)).to.equal(true)
 })
