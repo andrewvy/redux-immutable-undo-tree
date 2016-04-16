@@ -27,9 +27,11 @@ const counterReducer = (state = Immutable.Map(), action) => {
 }
 
 const rootReducer = undoable(counterReducer)
-const store = createStore(counterReducer, initialState)
+const store = createStore(rootReducer, initialState)
 
-describe('Simple counter reducer wrapped in undoable works', () => {
+describe('Simple counter reducer wrapped in undoable stores in main undo branch', () => {
+  let finalCount
+
   it('expect initial state to be 0', () => {
     expect(store.getState().get('counter')).to.equal(0)
   })
@@ -42,8 +44,18 @@ describe('Simple counter reducer wrapped in undoable works', () => {
   })
 
   it('expect initial state to be 2', () => {
-    store.dispatch(ActionCreators.decrement())
+    finalCount = store.dispatch(ActionCreators.decrement())
     expect(store.getState().get('counter')).to.equal(2)
+  })
+
+  it('expect following changeset history == follows timeline', () => {
+    const followerState = store.getState()
+      .getIn(['undo-tree', 'root', 'children'])
+      .reduce((state = Immutable.Map(), changeset) => {
+        return applyChangeset(state, changeset)
+      })
+
+    expect(followerState.get('counter')).to.equal(2)
   })
 })
 

@@ -46,7 +46,17 @@ export function createChangeset(oldState, newState) {
     diff: Diff(oldState, newState),
     timestamp: dateNow(),
     parentUUID: '',
-    children: Immutable.OrderedSet()
+    children: Immutable.List()
+  })
+}
+
+export function createEmptyChangeset() {
+  return Immutable.Map({
+    uuid: uuid.v4(),
+    diff: Immutable.List(),
+    timestamp: dateNow(),
+    parentUUID: '',
+    children: Immutable.List()
   })
 }
 
@@ -58,18 +68,42 @@ export function changesetIsWithin(a, b, delta) {
   return isWithin(a.get('timestamp'), b.get('timestamp'), delta)
 }
 
-export function initializeTree(state) {
-  return state.set('undo-tree', Immutable.Map())
+function initializeTree(state) {
+  let changeset = createEmptyChangeset()
+
+  return state.set('undo-tree', Immutable.Map({
+    root: changeset,
+    currentChangeset: changeset.get('uuid')
+  }))
+}
+
+function insert(state, newChangeset) {
+  // At the moment, this is only adding to the main root tree.
+  // We need to check which branch the current changeset is in
+  // and whether or not the changeset is the last child changeset.
+  //
+  // If current changeset is the last child, add new changeset
+  // to the end of the children branch.
+  //
+  // Else, we should add the newChangeset as a child to the
+  // currentChangeset, creating a new branch.
+
+  return state.setIn(['undo-tree', 'currentUUID'], newChangeset.get('uuid'))
+    .updateIn(['undo-tree', 'root'], (root) => {
+      return root.set('children', root.get('children').push(newChangeset))
+    })
 }
 
 export function undoable(reducer, _config = {}) {
   const config = {
-    undoHeight: _config.undoHeight
+    undoHeight: _config.undoHeight,
+    initialized: false
   }
 
   return (state = Immutable.Map(), action = {}) => {
-    if (state.isEmpty()) {
+    if (!config.initialized) {
       state = initializeTree(state)
+      config.initialized = true
     }
 
     switch (action.type) {
@@ -86,7 +120,11 @@ export function undoable(reducer, _config = {}) {
       case actionTypes.CHECKOUT:
         return state
       default:
-        return reducer(state, action)
+        const newState = reducer(state, action)
+        const changeset = createChangeset(state, newState)
+        const newStateWithUpdatedTree = insert(newState, changeset)
+
+        return newStateWithUpdatedTree
     }
   }
 }
