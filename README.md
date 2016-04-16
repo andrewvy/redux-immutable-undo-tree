@@ -1,6 +1,6 @@
 # redux-immutable-undo-tree
 
-![Codeship Build Status](https://codeship.com/projects/c52faeb0-e5a0-0133-e4c3-0e12c0a498c1/status?branch=master)
+[![Codeship Build Status](https://codeship.com/projects/c52faeb0-e5a0-0133-e4c3-0e12c0a498c1/status?branch=master)](https://codeship.com/projects/146662)
 
 _Powerful undo tree with Immutable.js data structures modeled after VIM's undo tree,
 powered by diff/patch changesets._

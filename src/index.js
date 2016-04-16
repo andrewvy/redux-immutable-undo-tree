@@ -74,7 +74,7 @@ function insert(state, newChangeset) {
 
         return visitChildren(mutableRoot, (child, path) => {
           if (child.get('uuid') === oldCurrentUUID) {
-            if (path != [0]) {
+            if (path !== [0]) {
               return mutableRoot.updateIn(path, (c1) => {
                 c1.update('children', (c) => c.push(newChangeset))
               })
