@@ -3,7 +3,7 @@ import Diff from 'immutablediff'
 import Patch from 'immutablepatch'
 import uuid from 'uuid'
 
-import { dateNow, normalizeDate, isWithin } from './utils/date'
+import { dateNow, isWithin } from './utils/date'
 
 export const actionTypes = {
   TIME_SUBTRACT: '@@redux_immutable_undo_tree/TIME_SUBTRACT',
@@ -47,27 +47,32 @@ export function createChangeset(oldState, newState) {
     timestamp: dateNow(),
     parentUUID: '',
     children: Immutable.OrderedSet()
-  });
+  })
 }
 
 export function applyChangeset(state, changeset) {
-  return Patch(state, changeset.get('diff'));
+  return Patch(state, changeset.get('diff'))
 }
 
 export function changesetIsWithin(a, b, delta) {
-  return isWithin(a.get('timestamp'), b.get('timestamp'), delta);
+  return isWithin(a.get('timestamp'), b.get('timestamp'), delta)
 }
 
-export function undoable(reducer, _config={}) {
+export function initializeTree(state) {
+  return state.set('undo-tree', Immutable.Map())
+}
+
+export function undoable(reducer, _config = {}) {
   const config = {
     undoHeight: _config.undoHeight
   }
 
   return (state = Immutable.Map(), action = {}) => {
-    if (state.isEmpty())
+    if (state.isEmpty()) {
       state = initializeTree(state)
+    }
 
-    switch(action.type) {
+    switch (action.type) {
       case undefined:
         return state
       case actionTypes.TIME_SUBTRACT:
@@ -76,7 +81,7 @@ export function undoable(reducer, _config={}) {
         return state
       case actionTypes.TRAVERSE_BACKWARDS:
         return state
-      case actionTypes.TRAVERSE_BACKWARDS:
+      case actionTypes.TRAVERSE_FORWARD:
         return state
       case actionTypes.CHECKOUT:
         return state

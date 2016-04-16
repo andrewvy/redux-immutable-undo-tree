@@ -6,7 +6,7 @@ import { createStore, combineReducers } from 'redux'
 
 const Actions = {
   DECREMENT: 'test/DECREMENT',
-  INCREMENT: 'test/INCREMENT',
+  INCREMENT: 'test/INCREMENT'
 }
 
 const ActionCreators = {
@@ -14,9 +14,9 @@ const ActionCreators = {
   increment() { return {type: Actions.INCREMENT} }
 }
 
-const initialState = Immutable.Map({ counter: 0 });
+const initialState = Immutable.Map({ counter: 0 })
 const counterReducer = (state = Immutable.Map(), action) => {
-  switch(action.type) {
+  switch (action.type) {
     case Actions.DECREMENT:
       return state.set('counter', state.get('counter') - 1)
     case Actions.INCREMENT:
@@ -63,7 +63,6 @@ describe('Changesets', () => {
   })
 
   it('Can determine which changeset came before', () => {
-
     // Initial Changesets
     const changeset_1 = createChangeset(A, B)
     const changeset_2 = createChangeset(B, C)
