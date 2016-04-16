@@ -1,9 +1,7 @@
 import Immutable from 'immutable'
-import Diff from 'immutablediff'
-import Patch from 'immutablepatch'
-import uuid from 'uuid'
 
-import { dateNow, isWithin } from './utils/date'
+import { visitChildren } from './utils/tree'
+import { createChangeset, createEmptyChangeset, applyChangeset, changesetIsWithin } from './utils/changeset'
 
 export const actionTypes = {
   TIME_SUBTRACT: '@@redux_immutable_undo_tree/TIME_SUBTRACT',
@@ -40,41 +38,17 @@ export const actionCreators = {
   }
 }
 
-export function createChangeset(oldState, newState) {
-  return Immutable.Map({
-    uuid: uuid.v4(),
-    diff: Diff(oldState, newState),
-    timestamp: dateNow(),
-    parentUUID: '',
-    children: Immutable.List()
-  })
-}
-
-export function createEmptyChangeset() {
-  return Immutable.Map({
-    uuid: uuid.v4(),
-    diff: Immutable.List(),
-    timestamp: dateNow(),
-    parentUUID: '',
-    children: Immutable.List()
-  })
-}
-
-export function applyChangeset(state, changeset) {
-  return Patch(state, changeset.get('diff'))
-}
-
-export function changesetIsWithin(a, b, delta) {
-  return isWithin(a.get('timestamp'), b.get('timestamp'), delta)
-}
-
 function initializeTree(state) {
   let changeset = createEmptyChangeset()
 
   return state.set('undo-tree', Immutable.Map({
     root: changeset,
-    currentChangeset: changeset.get('uuid')
+    currentUUID: changeset.get('uuid')
   }))
+}
+
+function checkIfEndNodeMatches(uuid, children) {
+  return children.last().get('uuid') === uuid
 }
 
 function insert(state, newChangeset) {
@@ -88,9 +62,26 @@ function insert(state, newChangeset) {
   // Else, we should add the newChangeset as a child to the
   // currentChangeset, creating a new branch.
 
+  let oldCurrentUUID = state.getIn(['undo-tree', 'currentUUID'])
+
   return state.setIn(['undo-tree', 'currentUUID'], newChangeset.get('uuid'))
     .updateIn(['undo-tree', 'root'], (root) => {
-      return root.set('children', root.get('children').push(newChangeset))
+      return root.withMutations((mutableRoot) => {
+        if ((root.get('children').count() === 0 && oldCurrentUUID === root.get('uuid')) ||
+            (root.get('children').last().get('uuid') === oldCurrentUUID)) {
+          return mutableRoot.update('children', (children) => children.push(newChangeset))
+        }
+
+        return visitChildren(mutableRoot, (child, path) => {
+          if (child.get('uuid') === oldCurrentUUID) {
+            if (path != [0]) {
+              return mutableRoot.updateIn(path, (c1) => {
+                c1.update('children', (c) => c.push(newChangeset))
+              })
+            }
+          }
+        })
+      })
     })
 }
 

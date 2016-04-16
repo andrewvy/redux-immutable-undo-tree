@@ -1,7 +1,10 @@
 import Immutable from 'immutable'
 import { expect } from 'chai'
-import { undoable, actionCreators, createChangeset, applyChangeset, changesetIsWithin } from '../src'
+import { undoable, actionCreators } from '../src'
 import { normalizeDate, isWithin } from '../src/utils/date'
+import { visitChildren } from '../src/utils/tree'
+import { createChangeset, createEmptyChangeset, applyChangeset, changesetIsWithin } from '../src/utils/changeset'
+
 import { createStore, combineReducers } from 'redux'
 
 const Actions = {
@@ -107,4 +110,57 @@ describe('utils/date.js', () => {
   expect(isWithin(A, B, 2)).to.equal(true)
   expect(isWithin(B, A, 2)).to.equal(false)
   expect(isWithin(B, A, -2)).to.equal(true)
+})
+
+describe('utils/tree.js', () => {
+  const tree = Immutable.fromJS({
+    id: 0,
+    children: [
+      {
+        id: 1,
+        children: [
+          {
+            id: 2,
+            children: [
+            ]
+          },
+          {
+            id: 3,
+            children: [
+              {
+                id: 4,
+                children: [
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        id: 5,
+        children: [
+          {
+            id: 6,
+            children: []
+          }
+        ]
+      }
+    ]
+  })
+
+  const paths = [
+    [0],
+    ['children', 0],
+    ['children', 'children', 0],
+    ['children', 'children', 'children', 0],
+    ['children', 'children', 'children', 1],
+    ['children', 'children', 'children', 'children', 0],
+    ['children', 'children', 'children', 'children', 1]
+  ]
+
+  let index = 0
+
+  visitChildren(tree, (child, path) => {
+    expect(paths[index++]).to.eql(path)
+  })
 })
