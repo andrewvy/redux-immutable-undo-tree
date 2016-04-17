@@ -2,7 +2,7 @@ import Immutable from 'immutable'
 import { expect } from 'chai'
 import { undoable, actionCreators } from '../src'
 import { normalizeDate, isWithin } from '../src/utils/date'
-import { visitChildren } from '../src/utils/tree'
+import { visitChildren, getNodesBetweenNodes } from '../src/utils/tree'
 import { createChangeset, createEmptyChangeset, applyChangeset, changesetIsWithin } from '../src/utils/changeset'
 
 import { createStore, combineReducers } from 'redux'
@@ -39,14 +39,14 @@ describe('Simple counter reducer wrapped in undoable stores in main undo branch'
     expect(store.getState().get('counter')).to.equal(0)
   })
 
-  it('expect initial state to be 3', () => {
+  it('expect state to be 3', () => {
     store.dispatch(ActionCreators.increment())
     store.dispatch(ActionCreators.increment())
     store.dispatch(ActionCreators.increment())
     expect(store.getState().get('counter')).to.equal(3)
   })
 
-  it('expect initial state to be 2', () => {
+  it('expect state to be 2', () => {
     finalCount = store.dispatch(ActionCreators.decrement())
     expect(store.getState().get('counter')).to.equal(2)
   })
@@ -151,16 +151,19 @@ describe('utils/tree.js', () => {
   const paths = [
     [0],
     ['children', 0],
-    ['children', 'children', 0],
-    ['children', 'children', 'children', 0],
-    ['children', 'children', 'children', 1],
-    ['children', 'children', 'children', 'children', 0],
-    ['children', 'children', 'children', 'children', 1]
+    ['children', 0, 'children', 0],
+    ['children', 0, 'children', 1, 'children', 0],
+    ['children', 0, 'children', 1],
+    ['children', 1],
   ]
 
   let index = 0
 
   visitChildren(tree, (child, path) => {
-    expect(paths[index++]).to.eql(path)
+    expect(path).to.eql(paths[index++])
   })
+
+  const nodeA = tree.getIn(['children', 1])
+  const nodeB = tree.getIn(['children', 1, 'children', 2])
+  const nodesBetween = getNodesBetweenNodes(nodeA, nodeB)
 })

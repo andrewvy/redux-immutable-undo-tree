@@ -85,6 +85,19 @@ function insert(state, newChangeset) {
     })
 }
 
+function timeRevert(state, time) {
+  const currentUUID = state.getIn(['undo-tree', 'currentUUID'])
+  const root = state.getIn(['undo-tree', 'root'])
+
+  const currentNode = visitChildren(root, (child, path) => {
+    if (child.get('uuid') === currentUUID) return child
+  })
+
+  const destinationNode = visitChildren(root, (child, path) => {
+    if (changesetIsWithin(currentNode, child)) return child
+  })
+}
+
 export function undoable(reducer, _config = {}) {
   const config = {
     undoHeight: _config.undoHeight,

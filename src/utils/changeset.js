@@ -9,6 +9,7 @@ export function createChangeset(oldState, newState) {
   return Immutable.Map({
     uuid: uuid.v4(),
     diff: Diff(oldState, newState),
+    inverseDiff: Diff(newState, oldState),
     timestamp: dateNow(),
     children: Immutable.List()
   })
@@ -18,6 +19,7 @@ export function createEmptyChangeset() {
   return Immutable.Map({
     uuid: uuid.v4(),
     diff: Immutable.List(),
+    inverseDiff: Immutable.List(),
     timestamp: dateNow(),
     children: Immutable.List()
   })
@@ -25,6 +27,10 @@ export function createEmptyChangeset() {
 
 export function applyChangeset(state, changeset) {
   return Patch(state, changeset.get('diff'))
+}
+
+export function applyInverseChangeset(state, changeset) {
+  return Patch(state, changeset.get('inverseDiff'))
 }
 
 export function changesetIsWithin(a, b, delta) {
