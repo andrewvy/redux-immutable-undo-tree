@@ -62,9 +62,14 @@ describe('Simple counter reducer wrapped in undoable stores in main undo branch'
   })
 
   it('Can travel forwards and backwards in time', () => {
+    // Initial Counter state is 2
     expect(store.getState().get('counter')).to.equal(2)
+
+    // Travel back in time to the initial state
     store.dispatch(actionCreators.timeSubtract(5, 'seconds'))
     expect(store.getState().get('counter')).to.equal(0)
+
+    // Travel forwards in time to the current state
     store.dispatch(actionCreators.timeAdd(5, 'seconds'))
     expect(store.getState().get('counter')).to.equal(2)
   })

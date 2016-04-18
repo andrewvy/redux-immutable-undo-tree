@@ -51,7 +51,7 @@ Uses:
 ### Example
 
 ```javascript
-import { undoable, undoTreeMiddleware, actionCreators } from 'redux-immutable-undo-tree'
+import { undoable, actionCreators } from 'redux-immutable-undo-tree'
 import { createStore, compose, combineReducers, applyMiddleware } from 'redux'
 
 const initialState = {};
@@ -62,13 +62,12 @@ const rootReducer = combineReducers({
 
 const store = createStore(
   rootReducer,
-  initialState,
-  applyMiddleware(undoTreeMiddleware)
+  initialState
 )
 
 // Go back in time 2 hours ago
-store.dispatch(actionCreators.TIME_SUBTRACT(2, 'hours'))
+store.dispatch(actionCreators.timeSubtract(2, 'hours'))
 
 // Go forwards in time 2 hours
-store.dispatch(actionCreators.TIME_ADD(2, 'hours'))
+store.dispatch(actionCreators.timeAdd(2, 'hours'))
 ```
