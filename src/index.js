@@ -90,6 +90,10 @@ export function expandTreePath(root, path) {
   let newPath = []
   let nodes = [root]
 
+  if (path.length === 0) {
+    return root.get('children').map((child) => child)
+  }
+
   path.forEach((segment) => {
     if (segment === 'children') return newPath.push(segment)
     for (let i = 0; i <= segment; i++) {
@@ -110,38 +114,42 @@ export function timeTravel(state, time) {
   const currentUUID = state.getIn(['undo-tree', 'currentUUID'])
   const root = state.getIn(['undo-tree', 'root'])
 
-  const current = traverseTree(root, (child, path) => {
+  const current = root.get('uuid') === currentUUID ? [root, []] : traverseTree(root, (child, path) => {
     if (child.get('uuid') === currentUUID) return [child, path]
   })
 
-  if (!current) return null
+  if (!current) return state
   const [currentNode, currentNodePath] = current
 
   const destination = traverseTree(root, (child, path) => {
     if (changesetIsWithin(currentNode, child, time)) return [child, path]
   })
 
-  if (!destination) return null
+  if (!destination) return state
   const [destinationNode, destinationNodePath] = destination
 
   let relativeRootNode = null
   let relativePath = null
+  let newState = state
+  let nodes = []
 
   if (currentNodePath.length > destinationNodePath) {
     relativeRootNode = destinationNode
     relativePath = diffTreePath(destinationNodePath, currentNodePath)
+    nodes = expandTreePath(relativeRootNode, relativePath)
+    nodes.reverse().forEach((node) => {
+      newState = applyInverseChangeset(newState, node)
+    })
   } else {
     relativeRootNode = currentNode
     relativePath = diffTreePath(currentNodePath, destinationNodePath)
+    nodes = expandTreePath(relativeRootNode, relativePath)
+    nodes.forEach((node) => {
+      newState = applyChangeset(newState, node)
+    })
   }
 
-  const nodes = expandTreePath(relativeRootNode, relativePath)
-
-  const newState = nodes.reverse().reduce((acc = state, node) => {
-    return applyInverseChangeset(acc, node)
-  })
-
-  return newState
+  return newState.setIn(['undo-tree', 'currentUUID'], destinationNode.get('uuid'))
 }
 
 export function undoable(reducer, _config = {}) {

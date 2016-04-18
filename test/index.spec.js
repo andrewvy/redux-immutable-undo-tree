@@ -61,9 +61,12 @@ describe('Simple counter reducer wrapped in undoable stores in main undo branch'
     expect(followerState.get('counter')).to.equal(2)
   })
 
-  it('Can travel back in time', () => {
+  it('Can travel forwards and backwards in time', () => {
+    expect(store.getState().get('counter')).to.equal(2)
     store.dispatch(actionCreators.timeSubtract(5, 'seconds'))
     expect(store.getState().get('counter')).to.equal(0)
+    store.dispatch(actionCreators.timeAdd(5, 'seconds'))
+    expect(store.getState().get('counter')).to.equal(2)
   })
 })
 
