@@ -1,6 +1,6 @@
 import Immutable from 'immutable'
 
-import { visitChildren } from './utils/tree'
+import { traverseTree } from './utils/tree'
 import { createChangeset, createEmptyChangeset, applyChangeset, changesetIsWithin } from './utils/changeset'
 
 export const actionTypes = {
@@ -72,9 +72,9 @@ function insert(state, newChangeset) {
           return mutableRoot.update('children', (children) => children.push(newChangeset))
         }
 
-        return visitChildren(mutableRoot, (child, path) => {
+        return traverseTree(mutableRoot, (child, path) => {
           if (child.get('uuid') === oldCurrentUUID) {
-            if (path !== [0]) {
+            if (path !== []) {
               return mutableRoot.updateIn(path, (c1) => {
                 c1.update('children', (c) => c.push(newChangeset))
               })
@@ -89,12 +89,12 @@ function timeRevert(state, time) {
   const currentUUID = state.getIn(['undo-tree', 'currentUUID'])
   const root = state.getIn(['undo-tree', 'root'])
 
-  const currentNode = visitChildren(root, (child, path) => {
-    if (child.get('uuid') === currentUUID) return child
+  const [currentNode, currentNodePath] = traverseTree(root, (child, path) => {
+    if (child.get('uuid') === currentUUID) return [child, path]
   })
 
-  const destinationNode = visitChildren(root, (child, path) => {
-    if (changesetIsWithin(currentNode, child)) return child
+  const [destinationNode, destinationNodePath] = traverseTree(root, (child, path) => {
+    if (changesetIsWithin(currentNode, child)) return [child, path]
   })
 }
 

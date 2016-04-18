@@ -1,58 +1,37 @@
 import Immutable from 'immutable'
 
-export function visitChildren(root, func) {
-  let q = [root]
-  let path = []
-  let currentIndex = 0
-  let childCount = 0
-  let mutReturn = root
+/*
+ *
+ * HOW TO TREE TRAVERSE.
+ *  ¯\_(ツ)_/¯
+ *
+ *  what's the functional way
+ *  breadth-first
+ *
+ *
+ */
 
-  while (q.length > 0) {
-    root = q.shift()
+export function formatPath(path) {
+  let newPath = []
 
-    if (func) {
-      mutReturn = func(root, path.concat([currentIndex]))
+  path.forEach((segment, index) => {
+    newPath.push(segment)
+    if ((index + 1) % 1 === 0) newPath.push('children')
+  })
 
-      if (mutReturn) break;
-    }
+  return newPath.splice(1, newPath.length - 2)
+}
 
-    if (currentIndex === childCount) {
-      currentIndex = childCount = 0
-    }
+export function traverseTree(root, callback, path=[], index=0) {
+  let response = callback(root, formatPath([...path, index]))
+  if (response) return response
 
-    currentIndex++
+  let children = root.get('children')
 
-    if (root.get('children').count() > 0) {
-      currentIndex = 0
-      childCount += root.get('children').count()
-      path.push('children')
-
-      root.get('children').forEach((child) => {
-        q.push(child)
-      })
-    }
-  }
-
-  return mutReturn
+  children.forEach((child, child_index) => {
+    traverseTree(child, callback, [...path, index], child_index)
+  })
 }
 
 export function getNodesBetweenNodes(nodeA, nodeB) {
-  let q = [nodeA]
-  let nodes = []
-
-  while (q.length > 0) {
-    let root = q.shift()
-    console.log(root)
-
-    if (Immutable.is(root, nodeB)) return nodes
-
-    if (root.get('children').count() > 0) {
-      root.get('children').forEach((child) => {
-        q.push(child)
-        nodes.push(child)
-      })
-    }
-  }
-
-  return null
 }

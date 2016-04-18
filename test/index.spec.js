@@ -2,7 +2,7 @@ import Immutable from 'immutable'
 import { expect } from 'chai'
 import { undoable, actionCreators } from '../src'
 import { normalizeDate, isWithin } from '../src/utils/date'
-import { visitChildren, getNodesBetweenNodes } from '../src/utils/tree'
+import { traverseTree, getNodesBetweenNodes } from '../src/utils/tree'
 import { createChangeset, createEmptyChangeset, applyChangeset, changesetIsWithin } from '../src/utils/changeset'
 
 import { createStore, combineReducers } from 'redux'
@@ -149,21 +149,18 @@ describe('utils/tree.js', () => {
   })
 
   const paths = [
-    [0],
+    [],
     ['children', 0],
     ['children', 0, 'children', 0],
-    ['children', 0, 'children', 1, 'children', 0],
     ['children', 0, 'children', 1],
+    ['children', 0, 'children', 1, 'children', 0],
     ['children', 1],
+    ['children', 1, 'children', 0],
   ]
 
   let index = 0
 
-  visitChildren(tree, (child, path) => {
+  traverseTree(tree, (root, path) => {
     expect(path).to.eql(paths[index++])
   })
-
-  const nodeA = tree.getIn(['children', 1])
-  const nodeB = tree.getIn(['children', 1, 'children', 2])
-  const nodesBetween = getNodesBetweenNodes(nodeA, nodeB)
 })
