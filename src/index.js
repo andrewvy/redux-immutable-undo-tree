@@ -53,15 +53,15 @@ function checkIfEndNodeMatches(uuid, children) {
 }
 
 function insert(state, newChangeset) {
-  // At the moment, this is only adding to the main root tree.
-  // We need to check which branch the current changeset is in
-  // and whether or not the changeset is the last child changeset.
-  //
-  // If current changeset is the last child, add new changeset
-  // to the end of the children branch.
-  //
-  // Else, we should add the newChangeset as a child to the
-  // currentChangeset, creating a new branch.
+  /* At the moment, this is only adding to the main root tree.
+   * We need to check which branch the current changeset is in
+   * and whether or not the changeset is the last child changeset.
+   * If current changeset is the last child, add new changeset
+   * to the end of the children branch.
+   *
+   * Else, we should add the newChangeset as a child to the
+   * currentChangeset, creating a new branch.
+   */
 
   let oldCurrentUUID = state.getIn(['undo-tree', 'currentUUID'])
 
@@ -86,6 +86,13 @@ function insert(state, newChangeset) {
     })
 }
 
+/* Expands the paths from
+ *
+ * [0,1,4] -----> ['children', 0, 'children', 1, 'children', 4]
+ *
+ * which lets us use it as a selector in our tree.
+ */
+
 export function expandTreePath(root, path) {
   let newPath = []
   let nodes = [root]
@@ -104,8 +111,12 @@ export function expandTreePath(root, path) {
   return nodes
 }
 
-// pathA is the shorter path
-// pathB is the longer path
+/* pathA is the shorter path
+ * pathB is the longer path
+ * return the subset of paths between pathA and pathB
+ * ['children', 0, 'children', 1] - ['children', 0] = ['children', 1]
+ */
+
 export function diffTreePath(pathA, pathB) {
   return pathB.slice(pathA.length)
 }
@@ -114,6 +125,7 @@ export function timeTravel(state, time) {
   const currentUUID = state.getIn(['undo-tree', 'currentUUID'])
   const root = state.getIn(['undo-tree', 'root'])
 
+  // The current node that we're located at.
   const current = root.get('uuid') === currentUUID ? [root, []] : traverseTree(root, (child, path) => {
     if (child.get('uuid') === currentUUID) return [child, path]
   })
@@ -121,6 +133,7 @@ export function timeTravel(state, time) {
   if (!current) return state
   const [currentNode, currentNodePath] = current
 
+  // The destination node that we want to travel to.
   const destination = traverseTree(root, (child, path) => {
     if (changesetIsWithin(currentNode, child, time)) return [child, path]
   })
@@ -132,6 +145,43 @@ export function timeTravel(state, time) {
   let relativePath = null
   let newState = state
   let nodes = []
+
+  /* If we are traversing up from the tree, closer to the root.
+   * Apply the inverse patches in reverse order.
+   *
+   *    ┌┐
+   *	└┤◀─────┐
+   *	┌┤      │
+   *	└┼───┐  │
+   *	┌┤  ┌│  │      traversing up the tree
+   *	└┤  └┤  │     requires applying inverse
+   *	┌┤  ┌┤  │     patches in reverse order.
+   *	└┤  └┤  │
+   *	┌┤  ┌┤  │
+   *	└▼  └┤  │
+   *		┌┤  │
+   *		└┤  │
+   *		┌┤  │
+   *		└▼──┘
+   *
+   *	┌┐
+   *	└┤──────┐
+   *	┌┤      │
+   *	└┼───┐  │
+   *	┌┤  ┌│  │
+   *	└┤  └┤  │     while traversing down the
+   *	┌┤  ┌┤  │        tree, we can apply
+   *	└┤  └┤  │       changesets normally.
+   *	┌┤  ┌┤  │
+   *	└▼  └┤  │
+   *		┌┤  │
+   *		└┤  │
+   *		┌┤  │
+   *		└▼◀─┘
+   *
+   * Otherwise, we're traversing down into the tree, and we'll
+   * want to apply the patches normally.
+   */
 
   if (currentNodePath.length > destinationNodePath) {
     relativeRootNode = destinationNode
@@ -149,6 +199,7 @@ export function timeTravel(state, time) {
     })
   }
 
+  // Update the currentUUID with the node that we just traveled to.
   return newState.setIn(['undo-tree', 'currentUUID'], destinationNode.get('uuid'))
 }
 
