@@ -1,6 +1,6 @@
 import Immutable from 'immutable'
 import { expect } from 'chai'
-import { undoable, actionCreators } from '../src'
+import { undoable, timeTravel, actionCreators } from '../src'
 import { normalizeDate, isWithin } from '../src/utils/date'
 import { traverseTree, getNodesBetweenNodes } from '../src/utils/tree'
 import { createChangeset, createEmptyChangeset, applyChangeset, changesetIsWithin } from '../src/utils/changeset'
@@ -59,6 +59,11 @@ describe('Simple counter reducer wrapped in undoable stores in main undo branch'
       })
 
     expect(followerState.get('counter')).to.equal(2)
+  })
+
+  it('Can travel back in time', () => {
+    store.dispatch(actionCreators.timeSubtract(5, 'seconds'))
+    expect(store.getState().get('counter')).to.equal(0)
   })
 })
 
@@ -155,7 +160,7 @@ describe('utils/tree.js', () => {
     ['children', 0, 'children', 1],
     ['children', 0, 'children', 1, 'children', 0],
     ['children', 1],
-    ['children', 1, 'children', 0],
+    ['children', 1, 'children', 0]
   ]
 
   let index = 0

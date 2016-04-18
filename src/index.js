@@ -1,7 +1,8 @@
 import Immutable from 'immutable'
 
+import { normalizeDate } from './utils/date'
 import { traverseTree } from './utils/tree'
-import { createChangeset, createEmptyChangeset, applyChangeset, changesetIsWithin } from './utils/changeset'
+import { createChangeset, createEmptyChangeset, applyChangeset, applyInverseChangeset, changesetIsWithin } from './utils/changeset'
 
 export const actionTypes = {
   TIME_SUBTRACT: '@@redux_immutable_undo_tree/TIME_SUBTRACT',
@@ -85,17 +86,62 @@ function insert(state, newChangeset) {
     })
 }
 
-function timeRevert(state, time) {
+export function expandTreePath(root, path) {
+  let newPath = []
+  let nodes = [root]
+
+  path.forEach((segment) => {
+    if (segment === 'children') return newPath.push(segment)
+    for (let i = 0; i <= segment; i++) {
+      nodes.push(root.getIn([...newPath, i]))
+    }
+  })
+
+  return nodes
+}
+
+// pathA is the shorter path
+// pathB is the longer path
+export function diffTreePath(pathA, pathB) {
+  return pathB.slice(pathA.length)
+}
+
+export function timeTravel(state, time) {
   const currentUUID = state.getIn(['undo-tree', 'currentUUID'])
   const root = state.getIn(['undo-tree', 'root'])
 
-  const [currentNode, currentNodePath] = traverseTree(root, (child, path) => {
+  const current = traverseTree(root, (child, path) => {
     if (child.get('uuid') === currentUUID) return [child, path]
   })
 
-  const [destinationNode, destinationNodePath] = traverseTree(root, (child, path) => {
-    if (changesetIsWithin(currentNode, child)) return [child, path]
+  if (!current) return null
+  const [currentNode, currentNodePath] = current
+
+  const destination = traverseTree(root, (child, path) => {
+    if (changesetIsWithin(currentNode, child, time)) return [child, path]
   })
+
+  if (!destination) return null
+  const [destinationNode, destinationNodePath] = destination
+
+  let relativeRootNode = null
+  let relativePath = null
+
+  if (currentNodePath.length > destinationNodePath) {
+    relativeRootNode = destinationNode
+    relativePath = diffTreePath(destinationNodePath, currentNodePath)
+  } else {
+    relativeRootNode = currentNode
+    relativePath = diffTreePath(currentNodePath, destinationNodePath)
+  }
+
+  const nodes = expandTreePath(relativeRootNode, relativePath)
+
+  const newState = nodes.reverse().reduce((acc = state, node) => {
+    return applyInverseChangeset(acc, node)
+  })
+
+  return newState
 }
 
 export function undoable(reducer, _config = {}) {
@@ -114,9 +160,11 @@ export function undoable(reducer, _config = {}) {
       case undefined:
         return state
       case actionTypes.TIME_SUBTRACT:
-        return state
+        let timeSubtract = -normalizeDate(action.payload.amount, action.payload.unit)
+        return timeTravel(state, timeSubtract)
       case actionTypes.TIME_ADD:
-        return state
+        let timeAdd = normalizeDate(action.payload.amount, action.payload.unit)
+        return timeTravel(state, timeAdd)
       case actionTypes.TRAVERSE_BACKWARDS:
         return state
       case actionTypes.TRAVERSE_FORWARD:

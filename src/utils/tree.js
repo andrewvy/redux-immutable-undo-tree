@@ -1,16 +1,5 @@
 import Immutable from 'immutable'
 
-/*
- *
- * HOW TO TREE TRAVERSE.
- *  ¯\_(ツ)_/¯
- *
- *  what's the functional way
- *  breadth-first
- *
- *
- */
-
 export function formatPath(path) {
   let newPath = []
 
@@ -22,15 +11,18 @@ export function formatPath(path) {
   return newPath.splice(1, newPath.length - 2)
 }
 
-export function traverseTree(root, callback, path=[], index=0) {
+export function traverseTree(root, callback, path = [], index = 0) {
   let response = callback(root, formatPath([...path, index]))
   if (response) return response
 
   let children = root.get('children')
 
-  children.forEach((child, child_index) => {
-    traverseTree(child, callback, [...path, index], child_index)
+  children.some((child, child_index) => {
+    response = traverseTree(child, callback, [...path, index], child_index)
+    if (response) return true
   })
+
+  if (response) return response
 }
 
 export function getNodesBetweenNodes(nodeA, nodeB) {
