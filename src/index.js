@@ -149,35 +149,35 @@ export function timeTravel(state, time) {
   /* If we are traversing up from the tree, closer to the root.
    * Apply the inverse patches in reverse order.
    *
-   *    ┌┐
-   *	└┤◀─────┐
-   *	┌┤      │
-   *	└┼───┐  │
-   *	┌┤  ┌│  │      traversing up the tree
-   *	└┤  └┤  │     requires applying inverse
-   *	┌┤  ┌┤  │     patches in reverse order.
-   *	└┤  └┤  │
-   *	┌┤  ┌┤  │
-   *	└▼  └┤  │
-   *		┌┤  │
-   *		└┤  │
-   *		┌┤  │
-   *		└▼──┘
+   * ┌┐
+   * └┤◀─────┐
+   * ┌┤      │
+   * └┼───┐  │
+   * ┌┤  ┌│  │      traversing up the tree
+   * └┤  └┤  │     requires applying inverse
+   * ┌┤  ┌┤  │     patches in reverse order.
+   * └┤  └┤  │
+   * ┌┤  ┌┤  │
+   * └▼  └┤  │
+   *     ┌┤  │
+   *     └┤  │
+   *     ┌┤  │
+   *     └▼──┘
    *
-   *	┌┐
-   *	└┤──────┐
-   *	┌┤      │
-   *	└┼───┐  │
-   *	┌┤  ┌│  │
-   *	└┤  └┤  │     while traversing down the
-   *	┌┤  ┌┤  │        tree, we can apply
-   *	└┤  └┤  │       changesets normally.
-   *	┌┤  ┌┤  │
-   *	└▼  └┤  │
-   *		┌┤  │
-   *		└┤  │
-   *		┌┤  │
-   *		└▼◀─┘
+   * ┌┐
+   * └┤──────┐
+   * ┌┤      │
+   * └┼───┐  │
+   * ┌┤  ┌│  │
+   * └┤  └┤  │     while traversing down the
+   * ┌┤  ┌┤  │        tree, we can apply
+   * └┤  └┤  │       changesets normally.
+   * ┌┤  ┌┤  │
+   * └▼  └┤  │
+   *     ┌┤  │
+   *     └┤  │
+   *     ┌┤  │
+   *     └▼◀─┘
    *
    * Otherwise, we're traversing down into the tree, and we'll
    * want to apply the patches normally.
